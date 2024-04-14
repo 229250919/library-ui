@@ -93,13 +93,13 @@
             :max="100"></el-input-number>
         </el-form-item>
 
-        <el-form-item label="昵称" prop="nickname">
+        <el-form-item label="昵称" prop="nickname" style="margin-bottom: 40px;">
           <el-input placeholder="请输入昵称" v-model="studentObj.nickname"></el-input>
         </el-form-item>
 
         <el-form-item label="人脸数据" class="login-mid-mid" prop="faceBase">
           <!--捕获人脸区域-->
-          <div class="savevideoCamera-canvasCamera ">
+          <div class="savevideoCamera-canvasCamera">
             <video id="videoCamera2" :width="videoWidth" :height="videoHeight" autoplay></video>
             <canvas style="display: none" id="canvasCamera2" :width="videoWidth" :height="videoHeight"></canvas>
 
@@ -307,7 +307,7 @@ export default {
       this.addAndUpdateState = false
       this.saveAndUpdateTitle = '修改学生信息'
       this.saveAndUpdateDialog = true
-      this.studentObj = row;
+      this.studentObj = { ...row };
       this.$nextTick(() => {
         let faceBase = document.getElementById("faceBase");
         if (faceBase) {
@@ -317,7 +317,6 @@ export default {
     },
     //删除
     handleDelete(index, row) {
-      console.log(index, row);
       this.$http.delete("/student/" + row.studentID).then(res => {
         this.getStudentList();
         this.$message.success(res.data.msg)

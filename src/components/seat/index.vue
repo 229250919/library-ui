@@ -52,7 +52,7 @@
                 <el-popconfirm :title="('确认删除' + scope.row.floor + '楼，' + scope.row.seatNumber + '号座位吗?')"
                   @confirm="handleDelete(scope.$index, scope.row)">
                   <el-button style="margin-left: 20px" icon="el-icon-delete" size="mini" type="danger" slot="reference"
-                    :disabled="scope.row.status === '已预定'">删除</el-button>
+                    :disabled="!scope.row.status === '空闲'">删除</el-button>
                 </el-popconfirm>
 
               </template>
