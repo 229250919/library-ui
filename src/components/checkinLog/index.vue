@@ -12,7 +12,7 @@
               </el-input>
             </el-form-item>
             <el-form-item>
-              <el-button icon="el-icon-search" @click="getResevationList">搜索</el-button>
+              <el-button icon="el-icon-search" @click="getCheckinList">搜索</el-button>
             </el-form-item>
           </el-form>
         </el-card>

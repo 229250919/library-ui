@@ -29,6 +29,25 @@
           </el-form>
         </el-card>
       </el-col>
+
+      <!-- 温度、湿度、开关 -->
+      <el-col :span="24" v-if="temperature !== null || humidity !== null">
+        <el-card header="环境数据和设备控制" style="margin-top: 20px;">
+          <el-form :inline="true">
+            <el-form-item v-if="temperature !== null">
+              <span style="font-size: 30px;">温度：{{ temperature }} °C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            </el-form-item>
+            <el-form-item v-if="humidity !== null">
+              <span style="font-size: 30px;">湿度：{{ humidity }} %&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            </el-form-item>
+            <el-form-item v-if="lamp !== null">
+              <label style="font-size: 30px;">灯：</label>
+              <el-switch v-model="lamp" active-color="#13ce66" inactive-color="#C8C8C8" active-value="on"
+                inactive-value="off" active-text="开" inactive-text="关" @change="switchLamp()"></el-switch>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-col>
     </el-row>
 
     <!--数据表格-->
@@ -77,6 +96,8 @@
 </template>
 
 <script>
+import mqtt from 'mqtt/dist/mqtt'
+import { mqttUrl, mqttConfig } from '../../mqttPropertity'
 export default {
   name: "index",
   data() {
@@ -90,15 +111,84 @@ export default {
       newSeat: {
         floor: '',
         seatNumber: ''
+      },
+      temperature: null,
+      humidity: null,
+      lamp: null
+    }
+  },
+  watch: {
+    floor(newValue, oldValue) {
+      if (oldValue != '') {
+        this.unsubscribeFloor(oldValue)
       }
+      this.subscribeFloor(newValue);
+
+      this.temperature = null;
+      this.humidity = null;
+      this.lamp = null;
     }
   },
   // 获取人脸数据
   created() {
     this.getSeatList()
     this.getFloors()
+    this.initMqtt()
   },
   methods: {
+    initMqtt() {
+      this.MQTT = mqtt.connect(mqttUrl, mqttConfig)
+
+      // 检测mqtt是否连接成功
+      this.MQTT.on('error', (e) => {
+        console.log(e)
+        this.MQTT.end();
+      });
+      const _this = this;
+      // 设置来收到消息处理的方法
+      this.MQTT.on('message', function (top, message) {
+        message = message.toString();
+        const topic = top.split('/');
+        //根据不同主题进行赋值操作
+        switch (topic[0]) {
+          case 'floor':
+            // #36#34#off 温度 湿度 灯
+            const value = message.split('#');
+            // ['', '32', '36', 'off']
+            _this.temperature = value[1];
+            _this.humidity = value[2];
+            _this.lamp = value[3];
+            break;
+        }
+      });
+
+    },
+    subscribeFloor(id) {
+      this.MQTT.subscribe("floor/" + id, { qos: 0 }, err => {
+        if (!err) {
+        } else {
+          console.warn('订阅失败')
+        }
+      })
+      this.MQTT.on('connect', () => {
+
+      });
+    },
+    unsubscribeFloor(id) {
+      this.MQTT.unsubscribe("floor/" + id, { qos: 0 }, err => {
+        if (!err) {
+        } else {
+          console.warn('取消订阅失败')
+        }
+      })
+      this.MQTT.on('connect', () => {
+
+      });
+    },
+    switchLamp() {
+      console.log(this.lamp)
+      this.MQTT.publish("led/" + this.floor, this.lamp);
+    },
     addSeat() {
       this.$http.post("/seat/add", this.newSeat).then(res => {
 
